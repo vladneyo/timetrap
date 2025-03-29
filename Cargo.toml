@@ -1,0 +1,20 @@
+[package]
+name = "timetrap"
+version = "0.1.0"
+edition = "2024"
+authors = [
+    "Vladyslav Neichev"
+]
+description = "Macros to wrap your code and measure time"
+license = "MIT"
+keywords = ["timer", "performance", "monitoring", "logging"]
+categories = ["development-tools", "development-tools::debugging", "development-tools::profiling"]
+readme = "README.md"
+
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-level = 3
+
+[dependencies]
