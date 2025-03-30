@@ -1,12 +1,29 @@
 #![allow(dead_code)]
 use mockall::automock;
+use crate::trap;
+
 #[test]
-fn test_inner_exp_was_called(){
+fn trap_expr_works(){
+    // arrange
     let mock = MockTestEntity::test_method_context();
 
+    // act
     mock.expect().times(1).return_const(());
 
-    assert_eq!((), MockTestEntity::test_method())
+    // assert
+    assert_eq!((), trap!(MockTestEntity::test_method()));
+}
+
+#[test]
+fn trap_name_expr_works(){
+    // arrange
+    let mock = MockTestEntity::test_method_context();
+
+    // act
+    mock.expect().times(1).return_const(());
+
+    // assert
+    assert_eq!((), trap!("test_method", MockTestEntity::test_method()));
 }
 
 
