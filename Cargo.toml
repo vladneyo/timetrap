@@ -13,6 +13,12 @@ categories = ["development-tools", "development-tools::debugging", "development-
 homepage = "https://github.com/vladneyo/timetrap"
 readme = "README.md"
 
+exclude = [
+    ".idea/*",
+    ".github/*",
+    "*.orig"
+]
+
 [profile.dev]
 opt-level = 0
 
