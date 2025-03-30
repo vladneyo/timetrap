@@ -6,9 +6,11 @@ authors = [
     "Vladyslav Neichev"
 ]
 description = "Macros to wrap your code and measure time"
+repository = "https://github.com/vladneyo/timetrap"
 license = "MIT"
 keywords = ["timer", "performance", "monitoring", "logging"]
 categories = ["development-tools", "development-tools::debugging", "development-tools::profiling"]
+homepage = "https://github.com/vladneyo/timetrap"
 readme = "README.md"
 
 [profile.dev]
@@ -18,3 +20,6 @@ opt-level = 0
 opt-level = 3
 
 [dependencies]
+
+[dev-dependencies]
+mockall = "0.13.1"

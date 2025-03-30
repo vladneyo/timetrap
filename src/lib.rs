@@ -1,4 +1,6 @@
-// use std::time::Instant;
+#[cfg(test)]
+mod tests;
+
 /// Trap method to wrap your code with
 ///
 /// # Example
@@ -20,3 +22,4 @@ macro_rules! trap {
         println!("{:?}", duration);
     };
 }
+
