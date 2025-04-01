@@ -1,6 +1,6 @@
 [package]
 name = "timetrap"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 authors = [
     "Vladyslav Neichev"
@@ -16,7 +16,8 @@ readme = "README.md"
 exclude = [
     ".idea/*",
     ".github/*",
-    "*.orig"
+    "*.orig",
+    "**/tests/*"
 ]
 
 [profile.dev]
@@ -26,6 +27,8 @@ opt-level = 0
 opt-level = 3
 
 [dependencies]
+sysinfo = "0.34.1"
 
 [dev-dependencies]
 mockall = "0.13.1"
+serial_test = "2.0"

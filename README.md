@@ -15,10 +15,13 @@
 cargo install timetrap
 ```
 
-### Example of use:
+### Time
+
+#### Example of use:
 
 ```
 use timetrap::*;
+
 trap!("section A", {
      let a = 0;
      ...
@@ -29,4 +32,29 @@ which results in:
 
 ```
 section A took 14.834µs
+```
+
+### Memeory
+
+Also with help of [sysinfo](https://github.com/GuillaumeGomez/sysinfo) you can measure memory usage in the same manner.
+
+#### Example of use:
+
+```
+use timetrap::*;
+
+trap_mem!("make_plot()", MemUnits.Kb, {
+     let a = 0;
+     ...
+});
+```
+
+which results in:
+
+```
+make_plot() took 928.328083ms
+make_plot() consumed memory: 560.00Kb
+make_plot() consumed swap: 0.00Kb
+
+
 ```
