@@ -1,20 +1,30 @@
 #[cfg(test)]
 mod tests;
 
-/// Log macro is intended to expand beyond println
-/// to use trace lib
-macro_rules! log {
-    ($s:literal $(,$i:expr)+) => {
-        println!($s $(, $i)+);
-    };
-}
-
 #[derive(Debug)]
 pub enum MemUnits {
     Bytes,
     Kb,
     Mb,
     Gb,
+}
+
+#[derive(Debug)]
+pub enum Colors {
+    Green,
+    Yellow,
+    Blue,
+    Magenta,
+    Cyan,
+    White,
+}
+
+/// Log macro is intended to expand beyond println
+/// to use trace lib
+macro_rules! log {
+    ($s:expr $(,$i:expr)+) => {
+        color_print::cprintln!($s $(, $i)+);
+    };
 }
 
 /// `trap!` method to wrap your code with
@@ -73,17 +83,20 @@ macro_rules! trap_mem {
     ($e:expr) => {{ measure_time_and_memory("", MemUnits::Bytes, || $e) }};
 }
 
-pub fn measure_time<F, R>(name: &str, f: F) -> R
+pub fn measure_time<F, R>(name: &str, color: Colors, f: F) -> R
 where
     F: FnOnce() -> R,
 {
+    let color_start = format!("<{:?}>", color);
+    let color_end = format!("</{:?}>", color);
     let start = std::time::Instant::now();
 
     let result = f();
 
     let duration = start.elapsed();
     if name.is_empty() {
-        log!("Took {:?}", duration);
+        let line = color_start + "Took {:?}</>"; // + color_end;
+        log!(line, duration);
     } else {
         log!("{} took {:?}", name, duration);
     }

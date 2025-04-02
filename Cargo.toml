@@ -28,6 +28,7 @@ opt-level = 3
 
 [dependencies]
 sysinfo = "0.34.1"
+color-print = "0.3.7"
 
 [dev-dependencies]
 mockall = "0.13.1"
