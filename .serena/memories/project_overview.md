@@ -2,7 +2,11 @@
 - Name: timetrap
 - Type: Rust library crate (edition 2024)
 - Purpose: Provide ergonomic macros to measure execution time and memory usage of wrapped code blocks.
-- Public API focus: `trap!` and `trap_mem!` macros, plus memory unit enum values.
-- Core dependencies: `sysinfo` (memory/swap metrics), `color-print` (console output formatting).
+- Public API focus: `trap!` and `trap_mem!` macros, plus `Colors` and memory unit enums (`MemUnits`).
+- Core dependencies: `sysinfo` (memory/swap metrics). Color output uses ANSI escape sequences directly (no extra color crate).
 - Test dependencies: `mockall`, `serial_test`.
-- CI: GitHub Actions workflow `.github/workflows/rust.yml` builds in release mode and runs library tests on push/PR to `main`.
+- Output behavior: color is enabled only when stdout is a TTY and `NO_COLOR` is unset.
+- Tests: module tests in `src/tests/` include macro behavior, memory units, and color formatting helpers; test style follows strict AAA conventions from `.serena/memories/style_and_conventions.md`.
+- CI/CD: GitHub Actions workflow `.github/workflows/ci.yml`:
+  - push to `main` and PR to `main` -> `build-test`
+  - tag push like `0.1.3` -> `build-test` then `publish` to crates.io via `CARGO_REGISTRY_TOKEN`

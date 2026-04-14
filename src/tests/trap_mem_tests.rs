@@ -1,120 +1,153 @@
-#![allow(dead_code)]
-#![allow(unused_imports)]
 use crate::*;
-use mockall::automock;
-use serial_test::serial;
 use std::collections::HashMap;
-use std::panic::resume_unwind;
-use sysinfo::System;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+fn test_method(counter: &AtomicUsize) {
+    counter.fetch_add(1, Ordering::SeqCst);
+}
+
+fn test_method_with_value(counter: &AtomicUsize) -> i32 {
+    counter.fetch_add(1, Ordering::SeqCst);
+    1 + 2
+}
+
+fn test_method_creates_huge_map(counter: &AtomicUsize) -> HashMap<u64, u64> {
+    counter.fetch_add(1, Ordering::SeqCst);
+
+    let mut map = HashMap::with_capacity(100_000);
+    for i in 0..100_000u64 {
+        map.insert(i, i);
+    }
+    map
+}
 
 // Function -> ()
 #[test]
 fn trap_mem_fn_called_once_and_works() {
     // arrange
-    let mock = MockTestEntity::test_method_context();
-    mock.expect().times(1).return_const(());
+    let call_counter = AtomicUsize::new(0);
 
     // act
-    let result = trap_mem!(MockTestEntity::test_method());
+    trap_mem!(test_method(&call_counter));
 
     // assert
-    assert_eq!((), result);
+    assert_eq!(1, call_counter.load(Ordering::SeqCst));
 }
 
 #[test]
 fn trap_mem_named_method_works() {
     // arrange
-    let mock = MockTestEntity::test_method_context();
-    mock.expect().times(1).return_const(());
+    let call_counter = AtomicUsize::new(0);
 
     // act
-    let result = trap_mem!("test_method", MockTestEntity::test_method());
+    trap_mem!("test_method", test_method(&call_counter));
 
     // assert
-    assert_eq!((), result);
+    assert_eq!(1, call_counter.load(Ordering::SeqCst));
 }
 
 // Function -> i32
 #[test]
 fn trap_mem_fn_called_once_and_returns_value() {
     // arrange
-    let mock = MockTestEntity::test_method_with_value_context();
-    mock.expect().times(1).return_const(3);
+    let expected = 3;
+    let call_counter = AtomicUsize::new(0);
 
     // act
-    let result = trap_mem!(MockTestEntity::test_method_with_value());
+    let result = trap_mem!(test_method_with_value(&call_counter));
 
     // assert
-    assert_eq!(3, result);
+    assert_eq!(expected, result);
+    assert_eq!(1, call_counter.load(Ordering::SeqCst));
 }
 
 #[test]
 fn trap_mem_named_method_returns_value() {
     // arrange
-    let mock = MockTestEntity::test_method_with_value_context();
-    mock.expect().times(1).return_const(3);
+    let expected = 3;
+    let call_counter = AtomicUsize::new(0);
 
     // act
     let result = trap_mem!(
         "test_method_with_value",
-        MockTestEntity::test_method_with_value()
+        test_method_with_value(&call_counter)
     );
 
     // assert
-    assert_eq!(3, result);
+    assert_eq!(expected, result);
+    assert_eq!(1, call_counter.load(Ordering::SeqCst));
+}
+
+#[test]
+fn trap_mem_named_method_with_color_returns_value() {
+    // arrange
+    let expected = 3;
+    let call_counter = AtomicUsize::new(0);
+
+    // act
+    let result = trap_mem!(
+        "test_method_with_value",
+        color = Colors::Yellow,
+        test_method_with_value(&call_counter)
+    );
+
+    // assert
+    assert_eq!(expected, result);
+    assert_eq!(1, call_counter.load(Ordering::SeqCst));
 }
 
 // Function -> HashMap
 #[test]
-#[serial]
 fn trap_mem_fn_called_once_and_returns_hashmap() {
     // arrange
-    let mock = MockTestEntity::test_method_creates_huge_map_context();
-    mock.expect()
-        .times(1)
-        .return_const(TestEntity::test_method_creates_huge_map());
+    let call_counter = AtomicUsize::new(0);
+    let expected_len = 100_000;
 
     // act
-    let result = trap_mem!(MockTestEntity::test_method_creates_huge_map());
+    let result = trap_mem!(test_method_creates_huge_map(&call_counter));
 
     // assert
-    assert_eq!(1_000_000, result.len());
+    assert_eq!(expected_len, result.len());
+    assert_eq!(1, call_counter.load(Ordering::SeqCst));
 }
 
 #[test]
-#[serial]
 fn trap_mem_named_method_returns_hashmap() {
     // arrange
-    let expected = TestEntity::get_huge_map();
-    let mock = MockTestEntity::test_method_creates_huge_map_context();
-    mock.expect().times(1).return_const(expected.clone());
+    let call_counter = AtomicUsize::new(0);
+    let expected_len = 100_000;
 
     // act
     let result = trap_mem!(
         "test_method_with_value",
-        MockTestEntity::test_method_creates_huge_map()
+        test_method_creates_huge_map(&call_counter)
     );
 
     // assert
-    assert_eq!(expected.len(), result.len());
+    assert_eq!(expected_len, result.len());
+    assert_eq!(1, call_counter.load(Ordering::SeqCst));
 }
 
 // Expression
 #[test]
 fn trap_mem_expr_works() {
+    // arrange
+    let mut was_called = false;
+
     // act
-    let result = trap_mem!({
-        let _a = 1;
-        let _b = 2;
-        // do nothing
+    trap_mem!({
+        was_called = true;
     });
 
     // assert
-    assert_eq!((), result);
+    assert!(was_called);
 }
 
 #[test]
 fn trap_mem_expr_returns_value() {
+    // arrange
+    let expected = 3;
+
     // act
     let result = trap_mem!({
         let _a = 1;
@@ -123,68 +156,62 @@ fn trap_mem_expr_returns_value() {
     });
 
     // assert
-    assert_eq!(3, result);
+    assert_eq!(expected, result);
 }
 
 // Units
 
 #[test]
-#[serial]
 fn trap_mem_set_kb() {
     // arrange
-    let expected = TestEntity::get_huge_map();
-    let mock = MockTestEntity::test_method_creates_huge_map_context();
-    mock.expect().times(1).return_const(expected.clone());
+    let call_counter = AtomicUsize::new(0);
+    let expected_len = 100_000;
 
     // act
     let result = trap_mem!(
         "test_method_with_value",
         MemUnits::Kb,
-        MockTestEntity::test_method_creates_huge_map()
+        test_method_creates_huge_map(&call_counter)
     );
 
     // assert
-    assert_eq!(expected.len(), result.len());
+    assert_eq!(expected_len, result.len());
+    assert_eq!(1, call_counter.load(Ordering::SeqCst));
 }
 
 #[test]
-#[serial]
 fn trap_mem_set_mb() {
     // arrange
-    let expected = TestEntity::get_huge_map();
-    let mock = MockTestEntity::test_method_creates_huge_map_context();
-    mock.expect().times(1).return_const(expected.clone());
+    let call_counter = AtomicUsize::new(0);
+    let expected_len = 100_000;
 
     // act
     let result = trap_mem!(
         "test_method_with_value",
         MemUnits::Mb,
-        MockTestEntity::test_method_creates_huge_map()
+        test_method_creates_huge_map(&call_counter)
     );
 
     // assert
-    assert_eq!(expected.len(), result.len());
+    assert_eq!(expected_len, result.len());
+    assert_eq!(1, call_counter.load(Ordering::SeqCst));
 }
 
-struct TestEntity {}
+#[test]
+fn trap_mem_set_mb_with_color() {
+    // arrange
+    let call_counter = AtomicUsize::new(0);
+    let expected_len = 100_000;
 
-#[automock]
-impl TestEntity {
-    fn test_method() {}
+    // act
+    let result = trap_mem!(
+        "test_method_with_value",
+        MemUnits::Mb,
+        color = Colors::Magenta,
+        test_method_creates_huge_map(&call_counter)
+    );
 
-    fn test_method_with_value() -> i32 {
-        1 + 2
-    }
-
-    fn test_method_creates_huge_map() -> HashMap<u64, u64> {
-        Self::get_huge_map()
-    }
-
-    fn get_huge_map() -> HashMap<u64, u64> {
-        let mut map = HashMap::with_capacity(1_000_000);
-        for i in 0..1_000_000u64 {
-            map.insert(i, i);
-        }
-        map
-    }
+    // assert
+    assert_eq!(expected_len, result.len());
+    assert_eq!(1, call_counter.load(Ordering::SeqCst));
 }

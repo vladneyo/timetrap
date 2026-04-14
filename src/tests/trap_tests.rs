@@ -1,80 +1,126 @@
-#![allow(dead_code)]
 use crate::*;
-use mockall::automock;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+fn test_method(counter: &AtomicUsize) {
+    counter.fetch_add(1, Ordering::SeqCst);
+}
+
+fn test_method_with_value(counter: &AtomicUsize) -> i32 {
+    counter.fetch_add(1, Ordering::SeqCst);
+    1 + 2
+}
 
 // Function -> ()
 #[test]
 fn trap_fn_called_once_and_works() {
     // arrange
-    let mock = MockTestEntity::test_method_context();
-    mock.expect().times(1).return_const(());
+    let call_counter = AtomicUsize::new(0);
 
     // act
-    let result = trap!(MockTestEntity::test_method());
+    trap!(test_method(&call_counter));
 
     // assert
-    assert_eq!((), result);
+    assert_eq!(1, call_counter.load(Ordering::SeqCst));
 }
 
 #[test]
 fn trap_named_method_works() {
     // arrange
-    let mock = MockTestEntity::test_method_context();
-    mock.expect().times(1).return_const(());
+    let call_counter = AtomicUsize::new(0);
 
     // act
-    let result = trap!("test_method", MockTestEntity::test_method());
+    trap!("test_method", test_method(&call_counter));
 
     // assert
-    assert_eq!((), result);
+    assert_eq!(1, call_counter.load(Ordering::SeqCst));
 }
 
 // Function -> i32
 #[test]
 fn trap_fn_called_once_and_returns_value() {
     // arrange
-    let mock = MockTestEntity::test_method_with_value_context();
-    mock.expect().times(1).return_const(3);
+    let expected = 3;
+    let call_counter = AtomicUsize::new(0);
 
     // act
-    let result = trap!(MockTestEntity::test_method_with_value());
+    let result = trap!(test_method_with_value(&call_counter));
 
     // assert
-    assert_eq!(3, result);
+    assert_eq!(expected, result);
+    assert_eq!(1, call_counter.load(Ordering::SeqCst));
 }
 
 #[test]
 fn trap_named_method_returns_value() {
     // arrange
-    let mock = MockTestEntity::test_method_with_value_context();
-    mock.expect().times(1).return_const(3);
+    let expected = 3;
+    let call_counter = AtomicUsize::new(0);
 
     // act
     let result = trap!(
         "test_method_with_value",
-        MockTestEntity::test_method_with_value()
+        test_method_with_value(&call_counter)
     );
 
     // assert
-    assert_eq!(3, result);
+    assert_eq!(expected, result);
+    assert_eq!(1, call_counter.load(Ordering::SeqCst));
+}
+
+#[test]
+fn trap_named_method_with_color_returns_value() {
+    // arrange
+    let expected = 3;
+    let call_counter = AtomicUsize::new(0);
+
+    // act
+    let result = trap!(
+        "test_method_with_value",
+        color = Colors::Green,
+        test_method_with_value(&call_counter)
+    );
+
+    // assert
+    assert_eq!(expected, result);
+    assert_eq!(1, call_counter.load(Ordering::SeqCst));
+}
+
+#[test]
+fn trap_unnamed_expr_with_color_returns_value() {
+    // arrange
+    let expected = 3;
+
+    // act
+    let result = trap!(color = Colors::Cyan, {
+        let a = 1;
+        let b = 2;
+        a + b
+    });
+
+    // assert
+    assert_eq!(expected, result);
 }
 
 // Expression
 #[test]
 fn trap_expr_works() {
+    // arrange
+    let mut was_called = false;
+
     // act
-    let result = trap!({
-        let _a = 1;
-        let _b = 2;
-        // do nothing
+    trap!({
+        was_called = true;
     });
 
     // assert
-    assert_eq!((), result);
+    assert!(was_called);
 }
 
 #[test]
 fn trap_expr_returns_value() {
+    // arrange
+    let expected = 3;
+
     // act
     let result = trap!({
         let _a = 1;
@@ -83,16 +129,5 @@ fn trap_expr_returns_value() {
     });
 
     // assert
-    assert_eq!(3, result);
-}
-
-struct TestEntity {}
-
-#[automock]
-impl TestEntity {
-    fn test_method() {}
-
-    fn test_method_with_value() -> i32 {
-        1 + 2
-    }
+    assert_eq!(expected, result);
 }

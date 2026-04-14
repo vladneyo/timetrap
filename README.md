@@ -1,60 +1,56 @@
 # timetrap
 
-[![Static Badge](https://img.shields.io/badge/timetrap-blue?style=plastic-square&logo=github&logoColor=fff&logoSize=auto&label=github&link=https%3A%2F%2Fgithub.com%2Fvladneyo%2Ftimetrap)](https://github.com/vladneyo/timetrap)
-[![Rust](https://github.com/vladneyo/timetrap/actions/workflows/rust.yml/badge.svg)](https://github.com/vladneyo/timetrap/actions/workflows/rust.yml)
-[![Crates.io Version](https://img.shields.io/crates/v/timetrap)](https://crates.io/crates/timetrap)
-[![Static Badge](https://img.shields.io/badge/timetrap-yellow?style=plastic-square&logo=docsdotrs&logoColor=fff&logoSize=auto&label=docs.rs&link=https%3A%2F%2Fdocs.rs%2Ftimetrap%2Flatest%2Ftimetrap%2F)](https://docs.rs/timetrap/latest/timetrap/)
+[![GitHub](https://img.shields.io/badge/github-vladneyo/timetrap-24292f?logo=github)](https://github.com/vladneyo/timetrap)
+[![CI](https://github.com/vladneyo/timetrap/actions/workflows/ci.yml/badge.svg)](https://github.com/vladneyo/timetrap/actions/workflows/ci.yml)
+[![Crates.io](https://img.shields.io/crates/v/timetrap)](https://crates.io/crates/timetrap)
+[![docs.rs](https://docs.rs/timetrap/badge.svg)](https://docs.rs/timetrap/latest/timetrap/)
 
-## Description
+Lightweight Rust macros for timing and memory/swap measurement.
+All macros return the wrapped expression result as-is (`R`), so they can be used inline without changing function behavior.
 
-`timetrap` library is intended to wrap your code and measure the time of its execution.
-
-### Install it as:
-
-```
-cargo install timetrap
+## Install
+```bash
+cargo add timetrap
 ```
 
-### Time
-
-#### Example of use:
-
-```
+## `trap!` (time only)
+```rust
 use timetrap::*;
 
-trap!("section A", {
-     let a = 0;
-     ...
+let count = trap!("parse_config", {
+    let config = "a=1,b=2";
+    config.split(',').count()
+});
+
+assert_eq!(2, count);
+```
+
+## `trap_mem!` (time + memory/swap)
+```rust
+use timetrap::*;
+
+let map = trap_mem!("build_map", MemUnits::Mb, {
+    let mut map = std::collections::HashMap::with_capacity(100_000);
+    for i in 0..100_000u64 {
+        map.insert(i, i);
+    }
+    map
+});
+
+assert_eq!(100_000, map.len());
+```
+
+## Colored Output
+```rust
+use timetrap::*;
+
+trap!("task", color = Colors::Green, {
+    1 + 1
+});
+
+trap_mem!("task_mem", MemUnits::Kb, color = Colors::Cyan, {
+    vec![0_u8; 4096]
 });
 ```
 
-which results in:
-
-```
-section A took 14.834µs
-```
-
-### Memeory
-
-Also with help of [sysinfo](https://github.com/GuillaumeGomez/sysinfo) you can measure memory usage in the same manner.
-
-#### Example of use:
-
-```
-use timetrap::*;
-
-trap_mem!("make_plot()", MemUnits.Kb, {
-     let a = 0;
-     ...
-});
-```
-
-which results in:
-
-```
-make_plot() took 928.328083ms
-make_plot() consumed memory: 560.00Kb
-make_plot() consumed swap: 0.00Kb
-
-
-```
+Color is printed only when stdout is a TTY and `NO_COLOR` is not set.

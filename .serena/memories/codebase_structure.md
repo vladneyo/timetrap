@@ -1,9 +1,12 @@
 # Codebase Structure
-- `src/lib.rs`: Main library code; macro definitions and measurement functions.
+- `src/lib.rs`: Main library code; `trap!`/`trap_mem!` macros, ANSI color formatting helpers, and measurement functions.
 - `src/tests/mod.rs`: Registers test modules.
 - `src/tests/trap_tests.rs`: Unit tests for `trap!` behavior.
 - `src/tests/trap_mem_tests.rs`: Unit tests for `trap_mem!` behavior, including unit conversion options.
+- `src/tests/color_tests.rs`: Unit tests for deterministic color formatting output.
+- `src/tests/README.md`: How to run all tests, module tests, single tests, and doctests.
 - `Cargo.toml`: Package metadata, dependencies, profiles.
 - `README.md`: Usage examples and crate description.
-- `.github/workflows/rust.yml`: CI build/test commands.
+- `AGENTS.md`: Repository contributor guide for contributors and coding agents.
+- `.github/workflows/ci.yml`: CI/CD workflow for build/test on `main` push/PR and publish on semver-like tags.
 - Build artifacts are in `target/`.

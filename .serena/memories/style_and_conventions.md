@@ -33,8 +33,42 @@ This guide is aligned with Rust rustdoc and Clippy recommendations (via Context7
 - For rustdoc examples using `?`, use hidden `main` boilerplate returning `Result` so doctests compile.
 - Comments should be short and explain intent or invariants (`why`), not restate obvious code (`what`).
 
-## Naming, Tests, and Tooling
+## Testing (AAA Pattern, Strict)
+- Every test must follow explicit AAA sections in this exact order:
+  - `// arrange`
+  - `// act`
+  - `// assert`
+- `arrange` contains only setup: fixtures, mocks, test data, and preconditions.
+- `act` contains one primary action/execution under test (single function/macro call).
+- `assert` contains only verifications (`assert_eq!`, `assert!`, `assert_ne!`, mock expectations checks).
+- Do not mix setup/assertions into `act`, and do not perform extra side effects in `assert`.
+- Use `#[should_panic(expected = \"...\")]` for panic expectations; keep the panic-triggering call in `act`.
+- Prefer returning `Result<(), E>` in tests when setup/act uses fallible operations; use `?` and end with `Ok(())`.
+- Keep unit tests deterministic and isolated; use `#[serial]` only when global/system state contention cannot be avoided.
+
+Required AAA skeleton:
+```rust
+#[test]
+fn behavior_is_correct() {
+    // arrange
+    let input = 2;
+
+    // act
+    let result = add_one(input);
+
+    // assert
+    assert_eq!(3, result);
+}
+```
+
+Disallowed patterns:
+- No assertion before the `// assert` block.
+- No hidden secondary actions after the main `act`.
+- No `let result = ...` for unit-returning calls; call directly in `act`.
+
+## Naming and Tooling
 - Naming: `snake_case` for functions/tests, `CamelCase` for enums/types.
-- Tests should follow Arrange/Act/Assert comments (`// arrange`, `// act`, `// assert`).
+- Test names should describe behavior and expected outcome (example: `trap_mem_named_method_returns_value`).
 - Required checks before completion: `cargo fmt --all`, `cargo clippy --all-targets --all-features -D warnings`, `cargo test --lib --verbose -- --nocapture`.
 - Clippy guidance: enable pedantic lints selectively; do not enable the whole `clippy::restriction` group.
+- Clippy test nuance: if `expect_used` is enabled, decide explicitly whether `expect` is permitted in tests (`allow-expect-in-tests`).
